@@ -63,6 +63,8 @@ mvn -Dtest=LiveOpenAiAssistantIntegrationTest test
 
 That test checks that the assistant receives only the database-authorized context returned through CARE tools.
 
+When enabled, the test logs the live smoke-test path so we can see what happened without attaching a debugger. The output includes the selected model, test subject, prompt, assistant summary, database-authorized visible cases, and database-authorized policy matches. It does not log the OpenAI API key.
+
 ## Application Shape
 
 ```text
