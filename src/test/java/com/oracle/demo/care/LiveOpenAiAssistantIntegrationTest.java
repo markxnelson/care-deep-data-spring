@@ -27,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class LiveOpenAiAssistantIntegrationTest extends AbstractDeepSecOracleTest {
     private static final Logger log = LoggerFactory.getLogger(LiveOpenAiAssistantIntegrationTest.class);
-    private static final String SUBJECT = "clara";
     private static final String VECTOR_NAME = "clinician";
     private static final String PROMPT = "Summarize the care cases and policy documents I am allowed to use.";
 
@@ -51,35 +50,64 @@ class LiveOpenAiAssistantIntegrationTest extends AbstractDeepSecOracleTest {
     private String modelName;
 
     @Test
-    void liveOpenAiAssistantKeepsDatabaseReturnedContextAsAuthority() {
+    void liveOpenAiAssistantShowsDifferentDatabaseReturnedContextForClaraAndDrew() {
         log.info("Running live OpenAI assistant smoke test with model '{}'.", modelName);
-        log.info("Subject: {}", SUBJECT);
-        log.info("Prompt: {}", PROMPT);
 
-        CareService.CareAssistantResponse response = assistantService.chat(SUBJECT, PROMPT, VECTOR_NAME);
+        CareService.CareAssistantResponse claraResponse = runAssistantAs("clara");
+        CareService.CareAssistantResponse drewResponse = runAssistantAs("drew");
 
-        log.info("Assistant summary:\n{}", response.summary());
-        log.info("Database-authorized visible cases: {}", response.visibleCases()
-                .stream()
-                .map(patientCase -> "%s [%s]".formatted(patientCase.patientName(), patientCase.caseStatus()))
-                .toList());
-        log.info("Database-authorized policy matches: {}", response.policyMatches()
-                .stream()
-                .map(policy -> "%s (distance=%.4f)".formatted(policy.title(), policy.distance()))
-                .toList());
-
-        assertThat(response.summary())
+        assertThat(claraResponse.summary())
                 .isNotBlank()
                 .doesNotContain("Troponin")
                 .doesNotContain("Cardiac observation")
                 .doesNotContain("Clinician review protocol");
-        assertThat(response.visibleCases())
+        assertThat(claraResponse.visibleCases())
                 .extracting("patientName")
                 .contains("Avery Patel", "Morgan Lee")
-                .doesNotContain("Jordan Smith");
-        assertThat(response.policyMatches())
+                .doesNotContain("Jordan Kim");
+        assertThat(claraResponse.policyMatches())
                 .extracting("title")
                 .contains("Shared escalation policy")
                 .doesNotContain("Clinician review protocol");
+
+        assertThat(drewResponse.summary())
+                .isNotBlank();
+        assertThat(drewResponse.visibleCases())
+                .extracting("patientName")
+                .contains("Avery Patel", "Jordan Kim")
+                .doesNotContain("Morgan Lee");
+        assertThat(drewResponse.policyMatches())
+                .extracting("title")
+                .contains("Clinician review protocol", "Shared escalation policy")
+                .doesNotContain("Coordinator discharge checklist");
+    }
+
+    private CareService.CareAssistantResponse runAssistantAs(String subject) {
+        log.info("Running '{}' as {}.", PROMPT, subject);
+
+        CareService.CareAssistantResponse response = assistantService.chat(subject, PROMPT, VECTOR_NAME);
+
+        log.info("""
+                Running "{}" as {}, output is:
+                Assistant summary:
+                {}
+                Database-authorized visible cases:
+                {}
+                Database-authorized policy matches:
+                {}
+                """,
+                PROMPT,
+                subject,
+                response.summary(),
+                response.visibleCases()
+                        .stream()
+                        .map(patientCase -> "%s [%s]".formatted(patientCase.patientName(), patientCase.caseStatus()))
+                        .toList(),
+                response.policyMatches()
+                        .stream()
+                        .map(policy -> "%s (distance=%.4f)".formatted(policy.title(), policy.distance()))
+                        .toList());
+
+        return response;
     }
 }
