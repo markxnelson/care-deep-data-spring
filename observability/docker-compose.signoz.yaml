@@ -1,0 +1,14 @@
+services:
+  signoz:
+    image: signoz/signoz-standalone:latest
+    container_name: care-signoz
+    privileged: true
+    ports:
+      - "8080:8080"
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - signoz-data:/var/lib/signoz
+
+volumes:
+  signoz-data:

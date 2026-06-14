@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: care-deepsec-spring
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+  datasource:
+    url: ${CARE_DATASOURCE_URL:}
+    username: ${CARE_DATASOURCE_USERNAME:CARE_APP}
+    password: ${CARE_DATASOURCE_PASSWORD:}
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    database-platform: org.hibernate.dialect.OracleDialect
+    hibernate:
+      ddl-auto: none
+
+care:
+  assistant:
+    spring-ai-enabled: ${CARE_ASSISTANT_SPRING_AI_ENABLED:false}
+  security:
+    jwt:
+      local-hmac-enabled: ${CARE_JWT_LOCAL_HMAC_ENABLED:false}
+      hmac-secret: ${CARE_JWT_HMAC_SECRET:}
+  deepsec:
+    local-direct-logon: ${CARE_DEEPSEC_LOCAL_DIRECT_LOGON:false}
+    jdbc-url: ${CARE_DATASOURCE_URL:}
+    default-end-user: ${CARE_DEEPSEC_DEFAULT_END_USER:clara}
+    end-user-password: ${CARE_DEEPSEC_END_USER_PASSWORD:}
